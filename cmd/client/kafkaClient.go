@@ -1,11 +1,9 @@
 package client
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"io/ioutil"
-	"net/http"
+	"github.com/snxl/DEBEZIUM-CONNECTOR/utils"
 )
 
 func CreateKafkaConsumer() *kafka.Consumer {
@@ -23,44 +21,27 @@ func CreateKafkaConsumer() *kafka.Consumer {
 	return consumer
 }
 
-func ConnectorHealthCheck() {
-	response, err := http.Get("http://localhost:8083/connectors/tables_connector")
-	defer response.Body.Close()
-
-	if err != nil {
-		panic(err)
-	}
-	if response.StatusCode != 200 {
-		RegisterConnector()
-	}
-}
-
-func RegisterConnector() *http.Response {
-	plan, _ := ioutil.ReadFile("../../connector/debezium-connector.json")
-	response, err := http.Post("http://localhost:8083/connectors/", "application/json", bytes.NewBuffer(plan))
-	fmt.Println(bytes.NewBuffer(plan))
-
-	if err != nil {
-		panic(err)
-	}
-
-	return response
-}
-
 func SubscribeTopic(consumer *kafka.Consumer) {
 	consumer.Subscribe("postgres.public.Product", nil)
+	consumer.Subscribe("postgres.public.Name", nil)
 
-	fmt.Println("Subscribed to product topic")
+	fmt.Println("Subscribed to topics")
 }
 
 func ReadTopicMessages(consumer *kafka.Consumer) string {
 
 	var message string
+
 	for {
 		msg, err := consumer.ReadMessage(-1)
 
 		if err == nil {
-			fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
+			fmt.Printf("Topic: %s \n", *msg.TopicPartition.Topic)
+
+			b := []byte(msg.Value)
+			b, _ = utils.Prettyprint(b)
+
+			fmt.Printf("%s\n", b)
 		} else {
 			fmt.Printf("Consumer error: %v (%v)\n", err, msg)
 		}

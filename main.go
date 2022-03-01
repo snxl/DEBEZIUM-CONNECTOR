@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/snxl/DEBEZIUM-CONNECTOR/cmd/client"
 )
 
@@ -13,5 +12,4 @@ func main() {
 	client.SubscribeTopic(consumer)
 	client.ReadTopicMessages(consumer)
 
-	fmt.Scan()
 }
