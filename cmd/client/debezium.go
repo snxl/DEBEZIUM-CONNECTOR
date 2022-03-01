@@ -20,7 +20,7 @@ func ConnectorHealthCheck() {
 }
 
 func RegisterConnector() *http.Response {
-	plan, _ := ioutil.ReadFile("../../connector/debezium-connector.json")
+	plan, _ := ioutil.ReadFile("./connector/debezium-connector.json")
 	response, err := http.Post("http://localhost:8083/connectors/", "application/json", bytes.NewBuffer(plan))
 	fmt.Println(bytes.NewBuffer(plan))
 
