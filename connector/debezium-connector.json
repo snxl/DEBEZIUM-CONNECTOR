@@ -16,6 +16,14 @@
     "value.converter.schemas.enable": "false",
     "include.schema.changes": "false",
 
+    "database.whitelist":"postgres",
+    "database.history.kafka.bootstrap.servers": "kafka:9092",
+    "database.history.kafka.topic": "schema-changes.postgres",
+    "transforms": "route",
+    "transforms.route.type": "org.apache.kafka.connect.transforms.RegexRouter",
+    "transforms.route.regex": "([^.]+)\\.([^.]+)\\.([^.]+)",
+    "transforms.route.replacement": "$3",
+
     "topic.creation.default.replication.factor": 3,
     "topic.creation.default.partitions": 10,
     "topic.creation.default.cleanup.policy": "compact",

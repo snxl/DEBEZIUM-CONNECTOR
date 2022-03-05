@@ -7,7 +7,7 @@ import (
 func main() {
 
 	consumer := client.CreateKafkaConsumer()
-	client.ConnectorHealthCheck()
+	//client.ConnectorHealthCheck()
 
 	client.SubscribeTopic(consumer)
 	client.ReadTopicMessages(consumer)
