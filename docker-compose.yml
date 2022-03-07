@@ -1,60 +1,44 @@
 version: "3.9"
 services:
-
-
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
-    container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    extra_hosts:
-      - "host.docker.internal:172.17.0.1"
     networks:
       - kafka-network
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"
 
   kafka:
-    image: confluentinc/cp-kafka:latest
-    container_name: kafka
+    image: confluentinc/cp-kafka:6.0.0
+    restart: always
     depends_on:
       - zookeeper
     ports:
       - "9092:9092"
+      - "9094:9094"
     environment:
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_LOG_CLEANER_DELETE_RETENTION_MS: 5000
       KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_MIN_INSYNC_REPLICAS: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LISTENERS: INTERNAL://:9092,OUTSIDE://:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,OUTSIDE://host.docker.internal:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_LOG_CLEANER_DELETE_RETENTION_MS: 5000
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
-    extra_hosts:
-      - "host.docker.internal:172.17.0.1"
-    networks:
-      - kafka-network
-
-  postgres:
-    image: debezium/postgres
-    container_name: postgres
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
     networks:
       - kafka-network
     extra_hosts:
       - "host.docker.internal:172.17.0.1"
-    # volumes:
-    #   - ./pg-data:/var/lib/postgresql/data
 
   connector:
     image: debezium/connect:latest
     container_name: postgres-connect
+    restart: always
     ports:
       - "8083:8083"
     links:
@@ -66,7 +50,40 @@ services:
       GROUP_ID: 1
       CONFIG_STORAGE_TOPIC: my_connect_configs
       OFFSET_STORAGE_TOPIC: my_connect_offsets
-      BOOTSTRAP_SERVERS: kafka:29092
+      BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      - kafka-network
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:6.0.0
+    restart: always
+    hostname: control-center
+    depends_on:
+      - kafka
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:9092'
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_CONNECT_CLUSTER: http://kafka-connect:8083
+      PORT: 9021
+    networks:
+      - kafka-network
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"
+
+  postgres:
+    image: debezium/postgres
+    restart: always
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
     networks:
       - kafka-network
     extra_hosts:

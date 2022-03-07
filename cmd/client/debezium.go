@@ -8,7 +8,7 @@ import (
 )
 
 func ConnectorHealthCheck() {
-	response, err := http.Get("http://localhost:8083/connectors/tables_connector")
+	response, err := http.Get("http://localhost:8083/connectors/cdc_main_postgres")
 	defer response.Body.Close()
 
 	if err != nil {

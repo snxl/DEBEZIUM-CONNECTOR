@@ -9,7 +9,7 @@ import (
 func CreateKafkaConsumer() *kafka.Consumer {
 
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": "localhost",
+		"bootstrap.servers": "localhost:9094",
 		"group.id":          "myGroup",
 		"auto.offset.reset": "earliest",
 	})
@@ -22,8 +22,7 @@ func CreateKafkaConsumer() *kafka.Consumer {
 }
 
 func SubscribeTopic(consumer *kafka.Consumer) {
-	consumer.Subscribe("postgres.public.Product", nil)
-	consumer.Subscribe("postgres.public.Name", nil)
+	consumer.Subscribe("Name", nil)
 
 	fmt.Println("Subscribed to topics")
 }
@@ -36,6 +35,7 @@ func ReadTopicMessages(consumer *kafka.Consumer) string {
 		msg, err := consumer.ReadMessage(-1)
 
 		if err == nil {
+
 			fmt.Printf("Topic: %s \n", *msg.TopicPartition.Topic)
 
 			b := []byte(msg.Value)
@@ -46,7 +46,7 @@ func ReadTopicMessages(consumer *kafka.Consumer) string {
 			fmt.Printf("Consumer error: %v (%v)\n", err, msg)
 		}
 	}
-
+	wait.Done()
 	closeConsumer(consumer)
 
 	return message
